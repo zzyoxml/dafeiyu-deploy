@@ -1,0 +1,5 @@
+name: dsh-awake
+desc: 让机器人在群里「不 @ 也能说话」。根因是框架 ProcessStage 只在 is_at_or_wake_command 为真时才调 LLM，而群里普通闲聊永远为假 —— 消息进得了插件、走不到模型，表现就是「不 @ 它一句都不说」。本插件在 WakingCheckStage 之后补上这个标志，让普通群消息也能进 LLM，但仍要过 dsh-decide「该不该开口」的判断，不会变成有问必答。指令消息（/ ! 开头）不动，交给 dsh-acl 管权限。
+version: 1.0.0
+author: dafeiyu
+repo: local

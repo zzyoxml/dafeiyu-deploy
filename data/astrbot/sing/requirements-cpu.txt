@@ -1,0 +1,20 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.5.1+cpu
+torchaudio==2.5.1+cpu
+transformers==4.46.3
+demucs==4.1.0
+faiss-cpu==1.11.0
+librosa==0.10.2.post1
+safetensors==0.4.5
+pedalboard==0.9.20
+noisereduce==3.0.3
+stftpitchshift==1.5.1
+torchcrepe==0.0.23
+local-attention==1.9.15
+beautifulsoup4==4.12.3
+pydub==0.25.1
+numpy==1.26.4
+soundfile
+scipy
+einops

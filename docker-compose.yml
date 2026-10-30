@@ -1,0 +1,92 @@
+# 大肥鱼 QQ 机器人 · 本地部署编排（WSL2 + Docker）
+#
+# 用法：docker compose up -d
+#
+# 【连接方向】AstrBot 4.29 的 aiocqhttp 适配器只支持「反向 WebSocket」
+#   （源码 astrbot/core/platform/sources/aiocqhttp/aiocqhttp_platform_adapter.py
+#     里写死 use_ws_reverse=True，只读 ws_reverse_host / ws_reverse_port）。
+#   所以是 NapCat 作为 WS 客户端去连 AstrBot，不是反过来。
+#   NapCat 自带 /app/templates/astrbot.json 就是这套配置，url = ws://astrbot:6199/ws
+#
+# 【启动顺序】AstrBot 要加载 59 个插件，耗时约 90~120 秒。
+#   NapCat 启动后会立刻去连 ws://astrbot:6199/ws，连接不上就每 30 秒重试。
+#   所以用 depends_on + healthcheck 保证 AstrBot 的 6199 监听起来之后才起 NapCat。
+
+name: dafeiyu
+
+services:
+  astrbot:
+    image: soulter/astrbot:latest
+    container_name: astrbot
+    restart: always
+    ports:
+      # 绑 0.0.0.0 而非 127.0.0.1：本机 WSL 3.x 的 localhostForwarding 在
+      # wsl --shutdown 后不重建，绑回环会导致 Windows 浏览器 localhost:6185 打不开。
+      # 安全性靠 Windows 防火墙与 NO_PROXY 兜底，详见 部署实测记录.md。
+      - "6185:6185"   # AstrBot WebUI
+      - "6186:6186"   # AstrBot API（可选）
+    volumes:
+      # AstrBot 全部状态：插件、配置、数据库、日志
+      - ./data/astrbot:/AstrBot/data
+    # ⚠️ 插件的所有旋钮都是环境变量，从这里读。改完本文件后必须重建容器：
+    #    docker compose up -d --force-recreate astrbot
+    #    （docker restart 不重读 env_file，这是该项目的已知坑）
+    env_file:
+      - ./robot.env
+    environment:
+      - TZ=Asia/Shanghai
+      # 允许无密码完成首次账号初始化（源码 auth_service.py:482）
+      # 生效条件：值为 1/true/yes/on，且 dashboard host ∈ {127.0.0.1, localhost, ::1}
+      # 初始化完成后可以删掉这行，改为用自己设置的账号密码登录。
+      - ASTRBOT_DASHBOARD_SKIP_DEFAULT_PASSWORD_AUTH=1
+    # 6199 是 OneBot 反向 WS 的监听端口，NapCat 要连它。
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket,sys;s=socket.socket();s.settimeout(3);sys.exit(0 if s.connect_ex(('127.0.0.1',6199))==0 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    networks:
+      - qqbot-net
+
+  napcat:
+    image: mlikiowa/napcat-docker:latest
+    container_name: napcat
+    restart: always
+    # 等 AstrBot 的 6199 监听起来再启动，否则 NapCat 一起来就连不上
+    depends_on:
+      astrbot:
+        condition: service_healthy
+    ports:
+      # 实测：NapCat 4.18.37 的 WebUI 监听 6099（不是旧文档里的 3001）
+      - "6099:6099"   # WebUI：扫码登录、配置 OneBot
+      - "3001:3001"   # OneBot WS（备用：正向模式，当前用反向，不依赖它）
+    volumes:
+      # 实测 NapCat 4.18.37 的真实布局（官方手册只写了 /app/config，不完整）：
+      #   /app/napcat/config  ← NapCat 真正读取 OneBot 配置的地方
+      #   /app/.config/QQ     ← QQ 登录态；不挂持久化的话容器一重建就得重新扫码
+      #   /app/config        ← 旧版路径，本项目沿用官方手册挂载点
+      # 三个都挂到宿主目录，容器重建不丢登录态、不丢配置。
+      - ./data/napcat:/app/config
+      - ./data/napcat/app-config:/app/.config/QQ
+      - ./data/napcat/napcat-config:/app/napcat/config
+      # 日志目录一并持久化，方便排查掉线问题
+      - ./data/napcat/logs:/app/napcat/logs
+    environment:
+      - NAPCAT_UID=1000
+      - NAPCAT_GID=1000
+      # 实测 entrypoint.sh 用的是 ACCOUNT 环境变量（不是命令行 -q）：
+      #   if [ -n "${ACCOUNT}" ]; then qq --no-sandbox -q $ACCOUNT
+      # 设了它才会用已保存的登录态直接上线，不再弹二维码。
+      # ⚠️ 换 QQ 号时改这里。
+      - ACCOUNT=${NAPCAT_ACCOUNT:?请在 robot.env 设置 NAPCAT_ACCOUNT}
+    # WebUI 无密码补丁的启动包装器：
+    # /app/napcat 不在挂载卷里（容器可写层），重建容器会丢补丁，
+    # 这个 wrapper 每次启动都重新检查并补打（幂等）。
+    entrypoint: ["/bin/bash", "/app/napcat/config/napcat-noauth-wrapper.sh"]
+    networks:
+      - qqbot-net
+
+networks:
+  qqbot-net:
+    driver: bridge

@@ -1,0 +1,148 @@
+# ═══════════════════════════════════════════════════════════
+# 大肥鱼 QQ 机器人 · 本地部署仓库
+#
+# 只存「部署配置 + 插件源码 + 复现脚本」，不存运行期数据。
+#
+# 明确排除的三类（合计约 3.2G，都在 data/astrbot 下）：
+#   1. AI 模型权重  sing/{model,rvc,rvc_cli}/     ~590M
+#      liuying.pth / contentvec / rmvpe.pt 都可重新下载
+#   2. Python venv  sing/venv/                    ~1.9G
+#      torch/lib/libtorch_cpu.so 单个 414M
+#   3. 运行缓存     temp/ stickerthief/ audio/   ~680M
+#      图片、偷来的表情包、语音产物
+#
+# 复现：跑 probe/install_sing.sh 重装 venv 与模型。
+# ═══════════════════════════════════════════════════════════
+
+# ─────────────── 密钥与凭证（最高优先级）───────────────
+# robot.env 含智谱 key / OneBot token / OFM key
+# cmd_config.json 含 dashboard.password / pbkdf2_password /
+#   jwt_secret / platform.ws_reverse_token
+# 这些一旦进仓库，转公开或 token 泄漏就全露。
+robot.env
+robot.env.template
+robot.env.bak*
+.env
+*.env.bak*
+onebot11.json
+
+data/astrbot/cmd_config.json
+data/astrbot/cmd_config.json.bak*
+data/astrbot/plugins.json
+data/astrbot/config/
+data/astrbot/*.db
+data/astrbot/*.db-wal
+data/astrbot/*.db-shm
+data/astrbot/*.db.bak*
+data/astrbot/*.jsonl
+
+# ─────────────── AI 模型与虚拟环境 ───────────────
+data/astrbot/sing/venv/
+data/astrbot/sing/model/
+data/astrbot/sing/rvc/
+data/astrbot/sing/rvc_cli/rvc/models/
+data/astrbot/sing/work/
+data/astrbot/sing/song-cache/
+data/astrbot/sing/status.jsonl
+data/astrbot/sing/registry.json
+
+# 任意位置的大权重（模型文件）
+*.pth
+*.pt
+*.bin
+*.safetensors
+*.onnx
+*.ckpt
+*.model
+
+# ─────────────── 运行期产物 ───────────────
+data/astrbot/temp/
+data/astrbot/stickerthief/
+data/astrbot/audio/
+data/astrbot/voice/
+data/astrbot/imagegen/
+data/napcat/
+
+# 音频/图片（插件源码目录不该有，防误提交）
+*.mp3
+*.wav
+*.silk
+*.amr
+*.flac
+*.ogg
+
+# ─────────────── 备份与补丁副本 ───────────────
+# 上游仓库本身有 patches/，但本地打的 napcat.mjs 补丁含绕过登录的改动，
+# 属于「部署私货」，随 🔧 目录保留；仅排除它的备份
+*.bak
+*.bak-*
+.main.py.bak*
+main.py.bak*
+docker-compose.yml.bak*
+patches/plugins-bak/
+*.mjs.patched
+
+# ─────────────── Python ───────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+pip-wheel-metadata/
+
+# ─────────────── 日志与编辑器 ───────────────
+*.log
+logs/
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ─────────────── 探针临时输出 ───────────────
+probe/out/
+probe/*.out
+probe/*.result
+
+# 第三方插件的嵌套 git（会触发 submodule 警告）
+data/astrbot/plugins/*/.git/
+data/astrbot/plugins/*/.github/
+
+# 知识库（运行期生成，含群聊内容）
+data/astrbot/knowledge_base/
+
+# ─────────────── 公开仓库额外排除 ───────────────
+# 1) NapCat 主程序打过「跳过登录校验」补丁，属破解改动，不公开。
+#    复现方式见 patches/README.md
+patches/napcat.mjs.patched
+patches/*.mjs.patched
+
+# 2) 群聊语料库（真人 uid + 原话 + 群号），隐私数据
+data/astrbot/plugins/dsh-slang/slang.json
+data/astrbot/plugins/dsh-slang/shadow.json
+
+# 3) 插件运行状态（含群号）
+data/astrbot/dsh_*_state.json
+data/astrbot/dsh_*_events.jsonl
+data/astrbot/qzone/
+
+# 4) 个人化数据
+data/astrbot/plugins/dsh-selfworth/data/
+data/astrbot/plugins/dsh-quote/test_quote.py
+
+# git 历史备份（不能进仓库）
+.git-old-*/
+.git.bak-*/
+
+# 第三方插件的嵌套 git（用 .gitignore 忽略而不是 submodule）
+data/astrbot/plugins/*/.git/
+patches/plugins-bak/
+patches/*.patched
+
