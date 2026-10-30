@@ -9,9 +9,10 @@
 本仓库 origin : zzyoxml/dafeiyu-deploy             ← 我的部署快照，私有
 ```
 
-拉上游更新：
+拉上游更新（**克隆本仓库后需先手动加上游**，git 不会把 remote 存进仓库）：
 
 ```bash
+git remote add upstream https://github.com/nanbengxian-cyber/dafeiyu-qq-bot.git
 git fetch upstream
 git log upstream/main --oneline -5        # 看上游新提交
 git diff HEAD upstream/main --stat        # 看差异面
