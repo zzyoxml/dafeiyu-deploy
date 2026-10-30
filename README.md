@@ -70,6 +70,20 @@ chmod 600 robot.env
 | `sing/model/`、`sing/rvc/` | ~590M | 同上（自动下载权重） |
 | `temp/`、`stickerthief/`、`audio/` | ~680M | 运行期自动生成 |
 
+
+## 深入阅读
+
+- [`docs/自建插件说明.md`](docs/自建插件说明.md) —— 6 个自建插件的设计思路与踩过的坑
+- [`patches/README.md`](patches/README.md) —— 对第三方组件做过哪些本地适配
+- [`probe/`](probe/) —— 部署与排障脚本，每个都带注释说明解决什么问题
+
+## 已知限制
+
+- **CPU 推理**：60 秒的歌约 3.5 分钟（demucs 占大头）。没 GPU 的话这是现实速度。
+- **Edge TTS 可能间歇 403**：微软侧校验 Chromium 版本号，需保持 `edge-tts >= 7.3.1`。
+  本仓库的做法是让合成强制走 `sing/venv`（挂载卷，容器重建不受影响）。
+- **只能单实例**：全局 `asyncio.Lock`，同一时刻只跑一个 RVC 任务，4 核 CPU 撑不住并行。
+
 ## 部署
 
 ```bash
