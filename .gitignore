@@ -146,3 +146,7 @@ data/astrbot/plugins/*/.git/
 patches/plugins-bak/
 patches/*.patched
 
+
+# 运行期图片（聊天记录里的图片上下文，不该进版本库）
+data/astrbot/imgctx/
+data/astrbot/plugins/*/imgctx/
