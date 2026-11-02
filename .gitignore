@@ -150,3 +150,10 @@ patches/*.patched
 # 运行期图片（聊天记录里的图片上下文，不该进版本库）
 data/astrbot/imgctx/
 data/astrbot/plugins/*/imgctx/
+
+# STT 模型（231MB ONNX，由 probe/install_stt.sh 重建）
+data/astrbot/stt-models/
+
+# 插件运行期动态数据
+data/astrbot/plugins/*/data/*_dyn.json
+data/astrbot/plugins/*/data/*.json
