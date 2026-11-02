@@ -157,3 +157,4 @@ data/astrbot/stt-models/
 # 插件运行期动态数据
 data/astrbot/plugins/*/data/*_dyn.json
 data/astrbot/plugins/*/data/*.json
+data/astrbot/cmd_config.json.bak-stt*
