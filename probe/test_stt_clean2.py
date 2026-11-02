@@ -1,3 +1,12 @@
+#!/bin/bash
+# dsh-stt-clean 的离线逻辑回归（9 个场景）
+#
+# 为什么单独有这个测试：
+#   插件第一版写 if 'Singing' in tags，但 tags 存的是完整标签 '<|Singing|>'，
+#   集合精确匹配永远 False，前缀从没加上过——肉眼看日志发现不了，必须用断言。
+#
+# 场景覆盖：唱歌带词 / BGM 带词 / 纯 Singing / 纯 BGM / 正常说话 /
+#          纯文字 / 正常长句 / Speech 残留 / 情绪 emoji 保留
 """dsh-stt-clean v1.0.1 离线逻辑验证。"""
 import re
 
@@ -67,3 +76,4 @@ print()
 print("=== 边界 ===")
 for desc, raw in [("含<|但非标签", "a <| b"), ("空串", ""), ("纯空格", "   "), ("emoji 在中间", "说话🎼说话")]:
     print(f"  {desc}: {raw!r} -> {clean(raw)!r}")
+

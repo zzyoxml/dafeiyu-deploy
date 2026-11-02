@@ -1,3 +1,11 @@
+#!/bin/bash
+# 把 SenseVoice provider 写进 cmd_config.json 并启用 STT
+#
+# 为什么用 python 而不是 docker exec + heredoc：
+#   heredoc 在 docker exec 里 stdin 传不进去，内容会被吞掉，改完配置没生效。
+#   正确做法是写成 .py 文件，docker cp 进去再执行。
+#
+# 回读校验必做：这一步曾经在「已写入」的假象下其实什么都没改。
 """启用 AstrBot 的 SenseVoice STT provider。"""
 import json
 
@@ -28,3 +36,4 @@ print(f"  回读 stt: {d2.get('provider_stt_settings')}")
 for p in d2.get("provider", []):
     if "sensevoice" in str(p.get("id", "")):
         print(f"  回读 STT provider: id={p['id']} enable={p['enable']}")
+

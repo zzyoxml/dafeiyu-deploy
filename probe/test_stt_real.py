@@ -1,4 +1,7 @@
-"""实测 SenseVoice ONNX 中文识别。"""
+"""STT 冒烟测试：用 Edge TTS 造 2 句已知文本，看识别对不对。
+
+注意：模型路径写死在模块常量里，换机器要改 MP。
+"""
 import os
 import subprocess
 import tempfile

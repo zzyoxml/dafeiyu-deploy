@@ -1,3 +1,10 @@
+#!/bin/bash
+# STT 准确度回归：8 句已知文本（Edge TTS 合成）→ 识别 → 逐字比对
+#
+# 设计要点：
+#  - 用 Edge TTS 现造音频，文本已知，才能算「完全一致」的比例
+#  - 比对前归一化标点，因为 SenseVoice 会自己加标点/emoji
+#  - 实测基线：5/8 完全一致，其余是标点或同音字差异（小鲸鱼→小金鱼）
 """多点实测 SenseVoice 中文识别准确度与速度。"""
 import os
 import subprocess
@@ -73,3 +80,4 @@ print(f"=== 汇总 ===")
 print(f"  完全一致: {ok_n}/{len(paths)}  ({ok_n/len(paths)*100:.0f}%)")
 print(f"  平均耗时: {tot_dt/max(len(paths),1):.2f}s / 句")
 print(f"  模型加载: 首次 8.6s，之后常驻内存")
+

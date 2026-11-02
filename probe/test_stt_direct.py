@@ -1,3 +1,12 @@
+#!/bin/bash
+# 直连 SenseVoice provider 验证端到端（含 MediaResolver 转码链路）
+#
+# 为什么不能 from astrbot.core.provider.manager import ProviderManager：
+#   会触发循环导入（manager → persona_mgr → api → star → kb_mgr → manager），
+#   报 "cannot import name 'ProviderManager' from partially initialized module"。
+#   所以只导 sources.sensevoice_selfhosted_source 里的类，手动实例化。
+#
+# 用途：改完环境/模型后跑这个，能一次性看清「加载耗时 / 识别文本 / 单句耗时」。
 """直接实例化 SenseVoice provider，绕过 ProviderManager 的循环导入。"""
 import asyncio
 import glob
@@ -59,3 +68,4 @@ async def main():
         print()
 
 asyncio.run(main())
+
