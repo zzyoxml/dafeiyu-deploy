@@ -1,0 +1,10 @@
+[Unit]
+Description=dafeiyu 空闲时回收 WSL page cache（每 10 分钟）
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

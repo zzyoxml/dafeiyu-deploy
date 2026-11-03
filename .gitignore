@@ -158,3 +158,4 @@ data/astrbot/stt-models/
 data/astrbot/plugins/*/data/*_dyn.json
 data/astrbot/plugins/*/data/*.json
 data/astrbot/cmd_config.json.bak-stt*
+data/astrbot/mem-reclaim.log

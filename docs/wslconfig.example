@@ -1,0 +1,12 @@
+[wsl2]
+autoProxy=true
+memory=8GB
+processors=4
+swap=2GB
+vmIdleTimeout=60
+
+[experimental]
+# dropcache：比 gradual 激进。VM 空闲时直接丢弃 page cache，
+# 而不是逐步回写。对「容器常驻、但大部分时间没有重 IO」的场景更有效。
+autoMemoryReclaim=dropcache
+sparseVhd=true
