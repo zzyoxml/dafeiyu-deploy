@@ -12,6 +12,12 @@
 
 set -u
 
+# 自身定位（Windows Git Bash 侧）：
+# 这个脚本在 Windows 侧被调用时，用 $0 推出所在目录，再转成 WSL 内可用的
+# /mnt/... 路径下传。这样整个项目可以搬动，不必再改硬编码的 /mnt/d/...。
+# 若 $0 不可靠（例如被 source），回退到旧默认值。
+WIN_SELF="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+
 # 自动识别运行环境：
 #   - 在 WSL 内跑（Linux 侧）：一切照常
 #   - 在 Windows Git Bash 里跑：转交给 WSL 执行
@@ -23,13 +29,16 @@ else
 fi
 
 if [ "$IN_WSL" = "0" ]; then
-  # Windows 侧：把脚本内容转交 WSL
+  # Windows 侧：算出对应的 /mnt/... 路径再传给 WSL 内的自己
+  #   git bash 的 pwd 是 /d/xml/dafeiyu，加 /mnt 前缀即 /mnt/d/xml/dafeiyu
+  SELF_POSIX="${WIN_SELF:-/d/xml/dafeiyu}"
+  WSL_BASE="/mnt${SELF_POSIX}"
   payload=$(base64 -w0 "$0")
-  wsl -d Ubuntu-24.04 -u root -- bash -c "echo $payload | base64 -d | bash"
+  wsl -d Ubuntu-24.04 -u root -- bash -c "export WSL_BASE='$WSL_BASE'; echo $payload | base64 -d | bash"
   exit $?
 fi
 
-LOG=/mnt/d/xml/dafeiyu/logs/keepalive.log
+LOG="${WSL_BASE:-/mnt/d/xml/dafeiyu}/logs/keepalive.log"
 mkdir -p "$(dirname "$LOG")" 2>/dev/null
 
 log() {

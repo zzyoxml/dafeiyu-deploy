@@ -24,13 +24,21 @@
 
 set -u
 
-BASE="/d/xml/dafeiyu"
+# 自身定位：不再硬编码 /d/xml/dafeiyu。
+# 用 git bash 的 $BASH_SOURCE 反推出脚本所在目录，整个项目可以随意搬动。
+# 注意 $(cd ... && pwd) 在 git bash 下得到的是 /d/... 的 POSIX 路径，
+# 与写死的 /d/xml/dafeiyu 等价，无需再做盘符转换。
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE="$SELF_DIR"
+
 LOG="$BASE/logs/guard.log"
 LOCK="$BASE/logs/guard.lock"
 HB_FILE="//wsl\$/Ubuntu-24.04/root/anchor.beat"   # 直读，不启动 wsl.exe
 HB_STALE=120          # 心跳超过这个秒数算失联
 
-NODE_BIN="/c/Users/Administrator/AppData/Local/Our Free Model/runtime/node.exe"
+# node 的位置仍来自那套外部工具（Our Free Model 运行时），
+# 但用户名不再写死：按当前用户展开。
+NODE_BIN="$HOME/AppData/Local/Our Free Model/runtime/node.exe"
 LLM_FWD="$BASE/llm-forward.mjs"
 
 mkdir -p "$BASE/logs" 2>/dev/null
