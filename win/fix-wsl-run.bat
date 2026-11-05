@@ -1,6 +1,9 @@
 @echo off
 setlocal
-set LOG=D:\xml\dafeiyu\logs\fix-wsl.log
+REM %~dp0 is this file's own folder WITH a trailing backslash.
+set "HERE=%~dp0"
+if not exist "%HERE%logs" mkdir "%HERE%logs" >nul 2>&1
+set LOG=%HERE%logs\fix-wsl.log
 
 echo ==== START %DATE% %TIME% ==== > "%LOG%"
 
@@ -45,7 +48,11 @@ bcdedit /enum "{current}" >> "%LOG%" 2>&1
 
 echo. >> "%LOG%"
 echo ---- verify files ---- >> "%LOG%"
-if exist "C:\Windows\System32\vmcompute.exe" (echo VMCOMPUTE: PRESENT >> "%LOG%") else (echo VMCOMPUTE: MISSING >> "%LOG%")
+if exist "C:\Windows\System32\vmcompute.exe" (
+    echo VMCOMPUTE: PRESENT >> "%LOG%"
+) else (
+    echo VMCOMPUTE: MISSING >> "%LOG%"
+)
 
 echo ==== END %DATE% %TIME% ==== >> "%LOG%"
 exit /b 0
