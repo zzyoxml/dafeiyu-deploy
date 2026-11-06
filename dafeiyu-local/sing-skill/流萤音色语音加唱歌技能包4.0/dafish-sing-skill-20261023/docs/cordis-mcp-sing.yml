@@ -1,0 +1,11 @@
+# 由 install-sing-skill.ps1 自动写入，路径按本机实际情况替换
+- insert:
+    - id: mcp-sing
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: sing
+        transport: stdio
+        command: '<NODE_EXE>'
+        args:
+          - '<MCP_SING_JS>'
+        toolCallTimeoutMs: 600000
