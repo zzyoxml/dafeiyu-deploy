@@ -227,3 +227,7 @@ dafeiyu-local/probe/test_all_img.sh
 dafeiyu-local/probe/test_eac_img.sh
 dafeiyu-local/probe/test_img_models.sh
 dafeiyu-local/probe/check_record_sent.sh
+
+dafeiyu-local/probe/switch_llm_dsh.py
+dafeiyu-local/probe/check_llm_dsh2.sh
+dafeiyu-local/probe/t_gateway_chain.py
