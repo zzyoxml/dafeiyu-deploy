@@ -1,0 +1,102 @@
+# ─────────────────────────────────────────────────────────────
+# 大肥鱼 QQ 机器人 · 部署配置与自建插件
+#
+# 这个仓库只存「配置 + 插件源码」，不存运行期大数据。
+# 明确排除的三类（合计约 3.2G，全在 data/astrbot 下）：
+#   1. AI 模型权重   sing/{model,rvc}/          ~590M
+#      RVC 的 liuying.pth、contentvec、rmvpe.pt 都是可再下载的权重
+#   2. Python venv   sing/venv/                 ~1.9G
+#      torch/libtorch_cpu.so 单个就 414M
+#   3. 运行期缓存    temp/ stickerthief/ *.db   ~680M
+#      图片、偷来的表情包、消息数据库
+#
+# 复现方式见 README：跑 probe/install_sing.sh 会重新装模型与 venv。
+# ─────────────────────────────────────────────────────────────
+
+# ══════════════════════ 密钥与凭证（最重要）══════════════════════
+# robot.env 里有智谱 key、OneBot token、OFM key 等 6 处明文密钥。
+# 私有仓库上传未脱敏版本也行，但一旦仓库转公开或 token 泄漏就全露了。
+# 所以本仓库只提交 robot.env.example（占位值），真实值留本地。
+robot.env
+robot.env.bak*
+.env
+*.env.bak*
+onebot11.json
+*dashboard*jwt*
+
+# ══════════════════════ AI 模型与虚拟环境 ══════════════════════
+data/astrbot/sing/venv/
+data/astrbot/sing/model/
+data/astrbot/sing/rvc/
+data/astrbot/sing/rvc_cli/rvc/models/
+data/astrbot/sing/work/
+data/astrbot/sing/song-cache/
+data/astrbot/sing/status.jsonl
+data/astrbot/sing/registry.json
+data/astrbot/sing/*.wav
+data/astrbot/sing/*.mp3
+data/astrbot/sing/*.pth
+
+# 任意位置的大权重
+*.pth
+*.pt
+*.bin
+*.safetensors
+*.onnx
+*.ckpt
+
+# ══════════════════════ 运行期产物 ══════════════════════
+data/astrbot/temp/
+data/astrbot/stickerthief/
+data/astrbot/audio/
+data/astrbot/imagegen/
+data/astrbot/voice/
+data/astrbot/*.db
+data/astrbot/*.db-wal
+data/astrbot/*.db-shm
+data/astrbot/*.db.bak*
+data/astrbot/*.jsonl
+data/astrbot/plugins.json
+data/astrbot/cmd_config.json
+data/astrbot/config/
+data/napcat/
+
+# 通用音频/图片产物（插件源码目录里不该有，但防误提交）
+*.mp3
+*.wav
+*.silk
+*.amr
+*.flac
+
+# ══════════════════════ Python ══════════════════════
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+
+# ══════════════════════ 日志与临时 ══════════════════════
+*.log
+logs/
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ══════════════════════ 备份目录 ══════════════════════
+patches/plugins-bak/
+*.bak-*/
+
+# ══════════════════════ 本地探针产物 ══════════════════════
+# probe/ 里的一次性验证脚本可以留（有复现价值），
+# 但它们生成的临时输出不留
+probe/**/out/
+probe/**/*.out
+probe/**/*.result
