@@ -1,0 +1,5 @@
+name: dsh-voice-liuying
+desc: 流萤音色语音：普通回复按 20% 概率自动出声（Edge TTS + RVC 换流萤音色），提供 /流萤说 强制朗读与 /流萤语音状态。CPU 推理，带冷却与小时配额。
+version: 1.0.0
+author: 大肥鱼
+repo: ""
