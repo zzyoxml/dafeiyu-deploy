@@ -1,0 +1,13 @@
+[Unit]
+Description=dafeiyu 空闲时回收 WSL page cache
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/dafeiyu/probe/mem-reclaim.sh
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target
