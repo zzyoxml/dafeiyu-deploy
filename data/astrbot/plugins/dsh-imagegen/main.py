@@ -400,6 +400,25 @@ CONCEPT_ONLY_WHEN_NOT_REPLIED = os.environ.get(
     "DSH_IMG_CONCEPT_ONLY_WHEN_NOT_REPLIED", "1"
 ) not in ("0", "false", "False")
 
+# ---------------------------------------------------------------- 随机主动生图
+# 机器人「自己想画」：每次正常回复群消息时，按概率把当前群聊话题画成一张图
+# 额外发出去。与用户主动 /画图 相互独立，但仍共用同一套冷却 / 并发 / 清理，
+# 所以不会刷屏。默认 5%（0.05），设 0 关闭。
+# 注意：只在群聊、且本轮没有别的生图行为（imagegen_done）时才掷骰子。
+RANDOM_DRAW_RATE = float(os.environ.get("DSH_IMG_RANDOM_RATE", "0.05"))
+RANDOM_DRAW_MIN_CHARS = max(4, int(os.environ.get("DSH_IMG_RANDOM_MIN_CHARS", "6")))
+RANDOM_DRAW_MAX_CHARS = max(RANDOM_DRAW_MIN_CHARS, int(os.environ.get("DSH_IMG_RANDOM_MAX_CHARS", "120")))
+RANDOM_DRAW_COOLDOWN = max(COOLDOWN, int(os.environ.get("DSH_IMG_RANDOM_COOLDOWN", "180")))
+RANDOM_DRAW_PREFIX = os.environ.get(
+    "DSH_IMG_RANDOM_PREFIX",
+    "把下面这段群聊内容画成一张图，抓住里面最具体的那个画面，不要画文字：",
+).strip()
+RANDOM_DRAW_REPLY = os.environ.get(
+    "DSH_IMG_RANDOM_REPLY", "（顺手画了张图）"
+).strip()
+_random_last: dict[str, float] = {}
+_random_inflight: set[str] = set()
+
 _sem = asyncio.Semaphore(MAX_CONCURRENCY)
 _last_call: dict[str, float] = {}
 _concept_last: dict[str, float] = {}
@@ -1123,7 +1142,9 @@ class Main(star.Star):
             uid = str(event.get_sender_id() or "")
             if not gid or not uid or uid == str(event.get_self_id() or ""):
                 return
-            if CONCEPT_GROUPS and gid not in CONCEPT_GROUPS:
+            # 空集合 = 所有群都放行；填具体群号 = 白名单；填 "*" 也表示全开。
+            # 2026-11-07 起默认对群友全开（env DSH_IMG_CONCEPT_GROUPS 置空即可）。
+            if CONCEPT_GROUPS and "*" not in CONCEPT_GROUPS and gid not in CONCEPT_GROUPS:
                 return
             text = str(event.get_message_str() or "").strip()
             ok, why = detect_visual_concept(text)
@@ -1337,6 +1358,70 @@ class Main(star.Star):
             logger.info("[imagegen] 兜底出图已发送: %s", path)
         except BaseException as e:
             logger.error("[imagegen] 兜底钩子异常: %s", e)
+
+    # ------------------------------------------------ 路径 2.5：随机主动生图
+    @filter.on_llm_response()
+    async def random_draw(self, event: AstrMessageEvent, response: LLMResponse) -> None:
+        """5% 概率把当前群聊话题画成一张图，作为回复的额外内容发出去。
+
+        与路径 1/2/3 完全独立：那些路径是「群友要图」，这一条是「机器人自己
+        想画」。刻意挂在 on_llm_response 尾部（回复文字已经生成之后），这样
+        即使生图失败也不影响正常聊天；并且共用同一套冷却与并发，不会刷屏。
+        """
+        try:
+            if RANDOM_DRAW_RATE <= 0:
+                return
+            if event.get_message_type() != MessageType.GROUP_MESSAGE:
+                return
+            # 本轮已经有别的生图行为（工具 / 兜底 / 主动概念图），别叠第二张
+            if event.get_extra("imagegen_done") or event.get_extra("dsh_initiate") or event.get_extra("dsh_proactive"):
+                return
+            # 用户明确在要图时交给前面几条路径，这里只管「没人要图」的普通回复
+            user_text = str(event.get_message_str() or "").strip()
+            if not user_text or user_text.startswith("/"):
+                return
+            if len(user_text) < RANDOM_DRAW_MIN_CHARS or len(user_text) > RANDOM_DRAW_MAX_CHARS:
+                return
+            if has_explicit_creation_intent(user_text) or DRAW_INTENT_RE.search(user_text):
+                return
+
+            sid = event.unified_msg_origin or ("group:" + str(event.get_group_id() or ""))
+            now = time.time()
+            # 独立冷却：随机出图不该被 /画图 的冷却卡住，但要比它更长（默认 3 分钟）
+            if now - _random_last.get(sid, 0.0) < RANDOM_DRAW_COOLDOWN:
+                return
+            # 全局生图冷却也要尊重，避免和别人刚画的图连着刷屏
+            if _cooldown_left(sid) > 0:
+                return
+            if sid in _random_inflight:
+                return
+            # 掷骰子放在最后，前面的判断都不算开销
+            if random.random() >= RANDOM_DRAW_RATE:
+                return
+
+            reply = str(response.completion_text or "").strip()
+            topic = user_text[:RANDOM_DRAW_MAX_CHARS]
+            if reply:
+                topic += " ｜ 机器人接话：" + reply[:60]
+            prompt = RANDOM_DRAW_PREFIX + topic
+            _random_inflight.add(sid)
+            _random_last[sid] = now
+            logger.info("[imagegen] 随机主动生图命中（rate=%.2f）：%.100s", RANDOM_DRAW_RATE, topic)
+            try:
+                path, err = await _generate(prompt, getattr(self, "context", None))
+                if not path:
+                    _random_last[sid] = 0.0
+                    logger.warning("[imagegen] 随机主动生图失败（不影响聊天）：%s", err)
+                    return
+                chain = [Image.fromFileSystem(path)]
+                if RANDOM_DRAW_REPLY:
+                    chain.append(Plain(RANDOM_DRAW_REPLY))
+                await event.send(MessageChain(chain=chain))
+                logger.info("[imagegen] 随机主动生图已发送: %s", path)
+            finally:
+                _random_inflight.discard(sid)
+        except BaseException as e:
+            logger.error("[imagegen] 随机主动生图异常（不影响聊天）：%s", e)
 
     # ------------------------------------------------ 路径 3：显式指令
 
