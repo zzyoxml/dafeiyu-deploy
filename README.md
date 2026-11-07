@@ -39,12 +39,10 @@ docker compose up -d
 QQ ── NapCat（Docker）── AstrBot（Docker）
                             │
                             ├── 67 个 dsh-* 插件（data/astrbot/plugins/）
-                            ├── LLM 网关：DSH NEXT 127.0.0.1:8326
-                            │            └─ 容器经 llm-forward.mjs 转发到 18901
                             ├── 生图：智谱 cogview / Agnes / pollinations
                             ├── 语音：Edge TTS + RVC 流萤音色
                             └── 唱歌：yt-dlp + demucs + RVC
-Windows 侧：guard.sh 守护 + llm-forward.mjs 转发 + 开机自启
+Windows 侧：guard.sh 守护 + 开机自启
 ```
 
 ---
@@ -101,15 +99,11 @@ Windows 侧：guard.sh 守护 + llm-forward.mjs 转发 + 开机自启
 
 ---
 
-## LLM 网关与渠道修复
+## 渠道修复（已独立开源）
 
-- 容器访问不到 Windows 回环，由 [llm-forward.mjs](llm-forward.mjs) 把 `0.0.0.0:18901` 转发到
-  **DSH NEXT 网关 `127.0.0.1:8326`**（2026-11-06 从旧 OFM 18900 切过来）。
-- AstrBot 主力模型 `trae/qwen3.8-flash`，其余可用模型见 `cmd_config.json`。
-- **CodeBuddy CN（buddy 渠道）`400/11128` 修复**：上游对 DSH 系统提示词做指纹匹配，
-  本地给 `dsh-our-free-model` 插件打了补丁并做成一键脚本。
-  完整定位过程与复现表格见 [docs/buddy-channel-fix.md](docs/buddy-channel-fix.md)，
-  补丁脚本 [probe/apply-buddy-channel-fix.mjs](probe/apply-buddy-channel-fix.mjs)。
+CodeBuddy CN（buddy 渠道）无法调用模型的修复，已单独开源为
+**[zzyoxml/ofm-buddy-channel-fix](https://github.com/zzyoxml/ofm-buddy-channel-fix)**
+（含一键补丁脚本与完整定位文档）。
 
 ---
 
@@ -122,7 +116,7 @@ _setup.sh                  首次部署脚本
 data/astrbot/plugins/       部署中的插件（自建 + 上游 + 第三方，67 个）
 repo/plugins/              上游插件原始拷贝，用于对照改了哪些
 patches/                   NapCat 等第三方组件适配
-docs/                      专题文档（画图接入、自建插件、buddy 修复、wslconfig）
+docs/                      专题文档（画图接入、自建插件、wslconfig）
 probe/                     WSL 部署/排障脚本 + 一键补丁脚本
 dafeiyu-local/             Windows + WSL2 本地部署包（指南、模板、探针）
 win/ wsl/                   Windows / WSL 侧启停与守护脚本
@@ -135,7 +129,7 @@ win/ wsl/                   Windows / WSL 侧启停与守护脚本
 
 真实密钥**不在本仓库**，以下文件已被 `.gitignore` 排除：
 
-- `robot.env` —— 智谱 key、OneBot token、网关 token
+- `robot.env` —— 智谱 key、OneBot token 等
 - `cmd_config.json` —— 面板密码、JWT secret、ws_reverse_token
 - `onebot11.json`、运行期图片/日志/`*.pth` 模型权重
 
@@ -173,7 +167,7 @@ chmod 600 robot.env
 |---|---|
 | [画图功能搭建与接入指南.md](docs/画图功能搭建与接入指南.md) | **AI 画图**：怎么搭、群友怎么用、5% 随机生图、防刷、FAQ |
 | [自建插件说明.md](docs/自建插件说明.md) | 早期 6 个自建插件的设计与踩坑 |
-| [buddy-channel-fix.md](docs/buddy-channel-fix.md) | buddy 渠道 400/11128 拦截的定位与补丁 |
+| [ofm-buddy-channel-fix](https://github.com/zzyoxml/ofm-buddy-channel-fix) | CodeBuddy CN 渠道修复（独立开源仓库） |
 | [使用说明.md](使用说明.md) | 日常双击操作、面板地址、群里怎么用 |
 | [README-部署工作区.md](README-部署工作区.md) | WSL2 本地部署包说明 |
 | [patches/README.md](patches/README.md) | 对第三方组件做过哪些本地适配 |
@@ -197,4 +191,5 @@ chmod 600 robot.env
 
 - 上游：[nanbengxian-cyber/dafeiyu-qq-bot](https://github.com/nanbengxian-cyber/dafeiyu-qq-bot)
 - 本部署：[zzyoxml/dafeiyu-deploy](https://github.com/zzyoxml/dafeiyu-deploy)
-- 免费模型插件问题参考：[Ebony-Vinyl/dsh-our-free-model#542](https://github.com/Ebony-Vinyl/dsh-our-free-model/issues/542)
+- 渠道修复（独立开源）：[zzyoxml/ofm-buddy-channel-fix](https://github.com/zzyoxml/ofm-buddy-channel-fix)
+- 问题参考：[Ebony-Vinyl/dsh-our-free-model#542](https://github.com/Ebony-Vinyl/dsh-our-free-model/issues/542)
